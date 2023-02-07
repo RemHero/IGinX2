@@ -62,7 +62,9 @@ public class StringUtils {
         if(Pattern.matches(regex, ts))
             return 0;
         // a.b.c.*.*
-        String tss = ts.substring(0, ts.indexOf("*")-1);
+        String tss = ts;
+        if (tss.contains("*"))
+            tss = ts.substring(0, ts.indexOf("*")-1);
         if (tss.indexOf(border) == 0) {
             return 0;
         } else
