@@ -58,7 +58,7 @@ public class StringUtils {
      */
     public static int compare(String ts, String border) {
         // *.*.*
-        String regex = "[*][.*]*";
+        String regex = "[*](.*)*";
         if(Pattern.matches(regex, ts))
             return 0;
         // a.b.c.*.*
