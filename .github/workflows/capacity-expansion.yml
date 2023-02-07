@@ -21,7 +21,7 @@ jobs:
         java: [ 8 ]
         python-version: [ "3.7" ]
         os: [ ubuntu-latest, macos-latest ]
-        DB-name: [ "iotdb11", "iotdb12" ]
+        DB-name: [ "iotdb12" ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -58,9 +58,7 @@ jobs:
       - name: oriHasDataExpHasData IT
         if: always()
         run: |
-          if [ "${{matrix.DB-name}}" == "iotdb11" ]; then
-            mvn test -q -Dtest=IoTDB11HistoryDataCapacityExpansionIT#oriHasDataExpHasData -DfailIfNoTests=false
-          elif [ "${{matrix.DB-name}}" == "iotdb12" ]; then
+          if [ "${{matrix.DB-name}}" == "iotdb12" ]; then
             mvn test -q -Dtest=IoTDB12HistoryDataCapacityExpansionIT#oriHasDataExpHasData -DfailIfNoTests=false
           fi
 
@@ -76,9 +74,7 @@ jobs:
       - name: oriNoDataExpNoData IT
         if: always()
         run: |
-          if [ "${{matrix.DB-name}}" == "iotdb11" ]; then
-            mvn test -q -Dtest=IoTDB11HistoryDataCapacityExpansionIT#oriNoDataExpNoData -DfailIfNoTests=false
-          elif [ "${{matrix.DB-name}}" == "iotdb12" ]; then
+          if [ "${{matrix.DB-name}}" == "iotdb12" ]; then
             mvn test -q -Dtest=IoTDB12HistoryDataCapacityExpansionIT#oriNoDataExpNoData -DfailIfNoTests=false
           fi
 
@@ -94,9 +90,7 @@ jobs:
       - name: oriHasDataExpNoData IT
         if: always()
         run: |
-          if [ "${{matrix.DB-name}}" == "iotdb11" ]; then
-            mvn test -q -Dtest=IoTDB11HistoryDataCapacityExpansionIT#oriHasDataExpNoData -DfailIfNoTests=false
-          elif [ "${{matrix.DB-name}}" == "iotdb12" ]; then
+          if [ "${{matrix.DB-name}}" == "iotdb12" ]; then
             mvn test -q -Dtest=IoTDB12HistoryDataCapacityExpansionIT#oriHasDataExpNoData -DfailIfNoTests=false
           fi
 
@@ -112,9 +106,7 @@ jobs:
       - name: oriNoDataExpHasData IT
         if: always()
         run: |
-          if [ "${{matrix.DB-name}}" == "iotdb11" ]; then
-            mvn test -q -Dtest=IoTDB11HistoryDataCapacityExpansionIT#oriNoDataExpHasData -DfailIfNoTests=false
-          elif [ "${{matrix.DB-name}}" == "iotdb12" ]; then
+          if [ "${{matrix.DB-name}}" == "iotdb12" ]; then
             mvn test -q -Dtest=IoTDB12HistoryDataCapacityExpansionIT#oriNoDataExpHasData -DfailIfNoTests=false
           fi
 
@@ -131,7 +123,7 @@ jobs:
         java: [ 8 ]
         python-version: [ "3.7" ]
         os: [ ubuntu-latest, macos-latest ]
-        DB-name: [ "iotdb11", "iotdb12" ]
+        DB-name: [ "iotdb12" ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -158,6 +150,7 @@ jobs:
 
       #第 1 阶段测试开始==========================================
       - name: Prepare CapExp environment
+        if: always()
         uses: ./.github/actions/capacityExpansionUnionTest
         with:
           version: ${VERSION}
@@ -166,10 +159,28 @@ jobs:
 
       - name: schema prefix IT
         run: |
-          if [ "${{matrix.DB-name}}" == "iotdb11" ]; then
-            mvn test -q -Dtest=IoTDB11HistoryDataCapacityExpansionIT#schemaPrefix -DfailIfNoTests=false
-          elif [ "${{matrix.DB-name}}" == "iotdb12" ]; then
+          if [ "${{matrix.DB-name}}" == "iotdb12" ]; then
             mvn test -q -Dtest=IoTDB12HistoryDataCapacityExpansionIT#schemaPrefix -DfailIfNoTests=false
+          fi
+
+      #第 2 阶段测试开始==========================================
+      - name: Prepare CapExp environment
+        if: always()
+        uses: ./.github/actions/capacityExpansionUnionTest
+        with:
+          version: ${VERSION}
+          DB-name: ${{matrix.DB-name}}
+          Test-Way: oriNoDataExpHasData
+
+      - name: Write Extra Data to Expansion Node
+        uses: ./.github/actions/iotdbWriter
+        with:
+          Test-Way: extraDataWrite
+
+      - name: data prefix IT
+        run: |
+          if [ "${{matrix.DB-name}}" == "iotdb12" ]; then
+            mvn test -q -Dtest=IoTDB12HistoryDataCapacityExpansionIT#testAddSameDataPrefixWithDiffSchemaPrefix_AND_testRemoveHistoryDataSource -DfailIfNoTests=false
           fi
 
   DataPrefixWithMultiSchemaPrefix-InfluxDB-CE:
@@ -222,11 +233,11 @@ jobs:
       - name: Run IoTDB
         uses: ./.github/actions/iotdbRunner
         with:
-          version: iotdb11
+          version: iotdb12
       - name: Change pom
         run: |
           mv test/pom.xml test/pom.xml.backup
-          mv test/pom.xml.iotdb11 test/pom.xml
+          mv test/pom.xml.iotdb12 test/pom.xml
       - name: Install with Maven
         run: mvn clean package -DskipTests
       - name: Write history Data
@@ -241,55 +252,3 @@ jobs:
       - name: Add Same DataPrefix With DiffSchemaPrefix IT
         run: |
           mvn test -q -Dtest=InfluxDBHistoryDataCapacityExpansionIT#testAddSameDataPrefixWithDiffSchemaPrefix -DfailIfNoTests=false
-
-  DataPrefixWithMultiSchemaPrefix_RemoveHistoryDataSource-IotDB-CE:
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        java: [ 8 ]
-        python-version: [ "3.7" ]
-        os: [ ubuntu-latest, macos-latest ]
-        DB-name: [ "iotdb11", "iotdb12" ]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Environmet Dependence
-        uses: ./.github/actions/dependence
-        with:
-          python-version: ${{ matrix.python-version }}
-          java: ${{ matrix.java }}
-      - name: Run ZooKeeper
-        uses: ./.github/actions/zookeeperRunner
-      - name: Run IoTDB
-        uses: ./.github/actions/iotdbRunner
-        with:
-          version: ${{matrix.DB-name}}
-
-      - name: Change pom
-        run: |
-          mv test/pom.xml test/pom.xml.backup
-          mv test/pom.xml.${{matrix.DB-name}} test/pom.xml
-      - name: Install IginX with Maven
-        shell: bash
-        run: |
-          mvn clean package -DskipTests
-      - name: Prepare CapExp environment
-        uses: ./.github/actions/capacityExpansionUnionTest
-        with:
-          version: ${VERSION}
-          DB-name: ${{matrix.DB-name}}
-          Test-Way: oriNoDataExpHasData
-
-      - name: Write Extra Data to Expansion Node
-        uses: ./.github/actions/iotdbWriter
-        with:
-          Test-Way: extraDataWrite
-
-      - name: data prefix IT
-        run: |
-          if [ "${{matrix.DB-name}}" == "iotdb11" ]; then
-            mvn test -q -Dtest=IoTDB11HistoryDataCapacityExpansionIT#testAddSameDataPrefixWithDiffSchemaPrefix_AND_testRemoveHistoryDataSource -DfailIfNoTests=false
-          elif [ "${{matrix.DB-name}}" == "iotdb12" ]; then
-            mvn test -q -Dtest=IoTDB12HistoryDataCapacityExpansionIT#testAddSameDataPrefixWithDiffSchemaPrefix_AND_testRemoveHistoryDataSource -DfailIfNoTests=false
-          fi
