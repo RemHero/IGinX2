@@ -103,10 +103,13 @@ public interface TimeSeriesRange extends Comparable<TimeSeriesRange> {
     public void setClosed(boolean closed);
 
     //Strange function: it should not work on the implementation of TimeSeriesPrefixRange
-    public static TimeSeriesRange fromString(String str) throws Exception {
+    public static TimeSeriesRange fromString(String str) throws IllegalArgumentException {
         if (str.contains("-") && !isContainSpecialChar(str)) {
             String[] parts = str.split("-");
-            assert parts.length == 2;
+            if (parts.length != 2) {
+                logger.error("Input string {} in invalid format of TimeSeriesInterval ", str);
+                throw new IllegalArgumentException("Input invalid string format in TimeSeriesRange");
+            }
             return new TimeSeriesInterval(parts[0].equals("null") ? null : parts[0], parts[1].equals("null") ? null : parts[1]);
         } else {
             if (str.contains(".*") && str.indexOf(".*") == str.length() - 2)
@@ -114,8 +117,8 @@ public interface TimeSeriesRange extends Comparable<TimeSeriesRange> {
             if(!isContainSpecialChar(str))
                 return new TimeSeriesPrefixRange(str);
             else {
-                logger.error("Input invalid string format in TimeSeriesRange");
-                throw new Exception("Input invalid string format in TimeSeriesRange");
+                logger.error("Input string {} in invalid format of TimeSeriesPrefixRange ", str);
+                throw new IllegalArgumentException("Input invalid string format in TimeSeriesRange");
             }
         }
     }
